@@ -12,14 +12,14 @@ categories = ["game-development"]
 exclude = [".github/*", "./example.gif"]
 
 [dependencies]
-bevy_app = "0.14"
-bevy_color = "0.14"
-bevy_asset = "0.14"
-bevy_ecs = "0.14"
-bevy_render = "0.14"
-bevy_ui = "0.14"
-bevy_reflect = "0.14"
-bevy_utils = "0.14"
+bevy_app = "0.15"
+bevy_color = "0.15"
+bevy_asset = "0.15"
+bevy_ecs = "0.15"
+bevy_render = "0.15"
+bevy_ui = "0.15"
+bevy_reflect = "0.15"
+bevy_utils = "0.15"
 
 [dev-dependencies]
-bevy = { version = "0.14", features = ["bevy_dev_tools"] }
+bevy = { version = "0.15", features = ["bevy_dev_tools"] }

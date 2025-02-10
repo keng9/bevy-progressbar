@@ -27,18 +27,15 @@ fn setup(
     mut options: ResMut<UiDebugOptions>,
 ) {
     options.enabled = true;
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
     commands
-        .spawn(NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                display: Display::Grid,
-                padding: UiRect::all(Val::Px(36.0)),
-                row_gap: Val::Px(12.0),
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                ..default()
-            },
+        .spawn(Node {
+            position_type: PositionType::Absolute,
+            display: Display::Grid,
+            padding: UiRect::all(Val::Px(36.0)),
+            row_gap: Val::Px(12.0),
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
             ..default()
         })
         .with_children(|wrapper| {

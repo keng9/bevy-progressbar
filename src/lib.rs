@@ -3,8 +3,11 @@ use bevy_asset::{load_internal_asset, prelude::Assets, Asset, Handle};
 use bevy_color::{Color, LinearRgba};
 use bevy_ecs::prelude::{Bundle, Component, Query, ResMut};
 use bevy_reflect::TypePath;
-use bevy_render::render_resource::{AsBindGroup, Shader};
-use bevy_ui::{node_bundles::MaterialNodeBundle, Style, UiMaterial, UiMaterialPlugin};
+use bevy_render::{
+    render_resource::{AsBindGroup, Shader},
+    storage::ShaderStorageBuffer,
+};
+use bevy_ui::{MaterialNode, Node, UiMaterial, UiMaterialPlugin};
 use bevy_utils::default;
 
 pub const PROGRESS_BAR_HANDLE: Handle<Shader> =
@@ -153,7 +156,8 @@ impl Default for ProgressBar {
 #[derive(Bundle)]
 pub struct ProgressBarBundle {
     progressbar: ProgressBar,
-    material_node_bundle: MaterialNodeBundle<ProgressBarMaterial>,
+    material_node: MaterialNode<ProgressBarMaterial>,
+    node: Node,
 }
 
 impl ProgressBarBundle {
@@ -163,12 +167,9 @@ impl ProgressBarBundle {
     ) -> ProgressBarBundle {
         ProgressBarBundle {
             progressbar,
-            material_node_bundle: MaterialNodeBundle {
-                style: Style {
-                    width: bevy_ui::Val::Percent(100.0),
-                    ..default()
-                },
-                material: materials.add(ProgressBarMaterial::default()),
+            material_node: MaterialNode(materials.add(ProgressBarMaterial::default())),
+            node: Node {
+                width: bevy_ui::Val::Percent(100.0),
                 ..default()
             },
         }
@@ -183,13 +184,10 @@ pub struct ProgressBarMaterial {
     empty_color: LinearRgba,
     #[uniform(1)]
     progress: f32,
-    /// The color of each section
     #[storage(2, read_only)]
-    sections_color: Vec<LinearRgba>,
+    sections_color: Handle<ShaderStorageBuffer>,
     #[storage(3, read_only)]
-    sections_start_percentage: Vec<f32>,
-    /// the length of the `sections_color` / `sections_start_percentage` vec.
-    /// needs to be set for the shader
+    sections_start_percentage: Handle<ShaderStorageBuffer>,
     #[uniform(4)]
     sections_count: u32,
 }
@@ -199,8 +197,8 @@ impl Default for ProgressBarMaterial {
         Self {
             empty_color: LinearRgba::NONE,
             progress: 0.0,
-            sections_color: vec![],
-            sections_start_percentage: vec![],
+            sections_color: Handle::default(),
+            sections_start_percentage: Handle::default(),
             sections_count: 0,
         }
     }
@@ -208,17 +206,22 @@ impl Default for ProgressBarMaterial {
 
 impl ProgressBarMaterial {
     /// Updates the material to match the ProgressBar
-    pub fn update(&mut self, bar: &ProgressBar) {
+    pub fn update(&mut self, bar: &ProgressBar, buffers: &mut Assets<ShaderStorageBuffer>) {
         self.empty_color = bar.empty_color.to_linear();
         self.progress = bar.progress;
-        self.sections_color = vec![];
-        self.sections_start_percentage = vec![];
+
+        let mut colors = Vec::new();
+        let mut percentages = Vec::new();
+
         let total_amount: u32 = bar.sections.iter().map(|(amount, _)| amount).sum();
         for (amount, color) in bar.sections.iter() {
-            self.sections_start_percentage
-                .push(1. / (total_amount as f32 / *amount as f32));
-            self.sections_color.push(color.to_linear());
+            percentages.push(1. / (total_amount as f32 / *amount as f32));
+            colors.push(color.to_linear());
         }
+
+        // Update the shader storage buffers
+        self.sections_color = buffers.add(ShaderStorageBuffer::from(colors));
+        self.sections_start_percentage = buffers.add(ShaderStorageBuffer::from(percentages));
         self.sections_count = bar.sections.len() as u32;
     }
 }
@@ -230,14 +233,15 @@ impl UiMaterial for ProgressBarMaterial {
 }
 
 fn update_progress_bar(
-    bar_query: Query<(&ProgressBar, &Handle<ProgressBarMaterial>)>,
+    bar_query: Query<(&ProgressBar, &MaterialNode<ProgressBarMaterial>)>,
     mut materials: ResMut<Assets<ProgressBarMaterial>>,
+    mut buffers: ResMut<Assets<ShaderStorageBuffer>>,
 ) {
     for (bar, handle) in bar_query.iter() {
         let Some(material) = materials.get_mut(handle) else {
             continue;
         };
 
-        material.update(bar);
+        material.update(bar, &mut buffers);
     }
 }
