@@ -1,10 +1,12 @@
-use bevy::dev_tools::ui_debug_overlay::UiDebugOptions;
+use std::time::Duration;
+
+// use bevy::dev_tools::ui_debug_overlay::UiDebugOptions;
 use bevy::prelude::*;
 use bevy_color::palettes::tailwind;
 use bevy_progressbar::ProgressBar;
 use bevy_progressbar::ProgressBarBundle;
 use bevy_progressbar::ProgressBarMaterial;
-use bevy_utils::{default, Duration};
+use bevy_utils::default;
 
 #[derive(Component)]
 struct ExampleProgress;
@@ -15,7 +17,11 @@ struct ExampleUpdateSections(pub Timer);
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, bevy_progressbar::ProgressBarPlugin))
-        .add_plugins(bevy::dev_tools::ui_debug_overlay::DebugUiPlugin)
+        .insert_resource(UiDebugOptions {
+            enabled: true,
+            // `UiDebugOptions` has a few new options, but for now we'll leave the defaults.
+            ..default()
+        })
         .add_systems(Startup, (setup,))
         .add_systems(Update, (increase_progress, update_sections, close_on_esc))
         .run();
