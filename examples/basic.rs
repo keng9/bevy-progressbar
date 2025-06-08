@@ -45,7 +45,7 @@ fn setup(
             ..default()
         })
         .with_children(|wrapper| {
-            for (index, bar) in [
+            let progress_bars = [
                 ProgressBar::new(vec![
                     (200, tailwind::RED_500.into()),
                     (400, tailwind::BLUE_500.into()),
@@ -60,10 +60,9 @@ fn setup(
                 ProgressBar::new(vec![(200, tailwind::RED_500.into())])
                     .set_progress(1.0)
                     .clone(),
-            ]
-            .into_iter()
-            .enumerate()
-            {
+            ];
+
+            for (index, bar) in progress_bars.into_iter().enumerate() {
                 let mut entity_command = wrapper.spawn(ProgressBarBundle::new(bar, &mut materials));
 
                 if index == 0 {
@@ -72,7 +71,7 @@ fn setup(
 
                 if index == 2 {
                     entity_command.insert(ExampleUpdateSections(Timer::new(
-                        Duration::from_secs(2),
+                        Duration::from_secs_f32(2.0),
                         TimerMode::Repeating,
                     )));
                 }
